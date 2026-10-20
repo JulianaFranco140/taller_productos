@@ -20,6 +20,9 @@ class _ProductScreenState extends State<ProductScreen> {
   late final ProductService _service;
   late Future<List<Product>> _futureProducts;
 
+  // Evita lanzar dos sincronizaciones a la vez.
+  bool _syncing = false;
+
   @override
   void initState() {
     super.initState();
@@ -32,6 +35,26 @@ class _ProductScreenState extends State<ProductScreen> {
     setState(() {
       _futureProducts = _service.getProducts();
     });
+  }
+
+  // La pantalla solo pide sincronizar; la lógica vive en el repository.
+  Future<void> syncPending() async {
+    setState(() => _syncing = true);
+    try {
+      await widget.repository.syncPending();
+      _showMessage('Pendientes sincronizados');
+    } catch (_) {
+      _showMessage('No se pudo sincronizar. Los cambios siguen pendientes');
+    } finally {
+      if (mounted) setState(() => _syncing = false);
+    }
+  }
+
+  void _showMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   void openProductDetail(Product product) {
@@ -50,7 +73,23 @@ class _ProductScreenState extends State<ProductScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
-      appBar: AppBar(title: const Text('Productos'), centerTitle: true),
+      appBar: AppBar(
+        title: const Text('Productos'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            tooltip: 'Sincronizar pendientes',
+            onPressed: _syncing ? null : syncPending,
+            icon: _syncing
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.sync),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(

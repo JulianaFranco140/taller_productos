@@ -16,6 +16,8 @@ Widget appWith(MockClient client) => MaterialApp(
 );
 
 void main() {
+  _syncTests();
+
   testWidgets('muestra carga y luego los productos', (tester) async {
     final client = MockClient(
       (_) async => http.Response(
@@ -76,5 +78,55 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
     expect(calls, 2);
     expect(find.text('Reintentar'), findsOneWidget);
+  });
+}
+
+class CountingRepository extends InMemoryProductRepository {
+  int syncCalls = 0;
+
+  CountingRepository({super.simulateSyncFailure}) : super(delay: Duration.zero);
+
+  @override
+  Future<void> syncPending() {
+    syncCalls++;
+    return super.syncPending();
+  }
+}
+
+Widget _appWithRepository(CountingRepository repository) => MaterialApp(
+  home: ProductScreen(
+    repository: repository,
+    service: ProductService(
+      client: MockClient(
+        (_) async => http.Response(jsonEncode({'products': []}), 200),
+      ),
+    ),
+  ),
+);
+
+void _syncTests() {
+  testWidgets('Sincronizar pendientes llama a repository.syncPending()', (
+    tester,
+  ) async {
+    final repository = CountingRepository();
+    await tester.pumpWidget(_appWithRepository(repository));
+
+    await tester.tap(find.byTooltip('Sincronizar pendientes'));
+    await tester.pump();
+
+    expect(repository.syncCalls, 1);
+    expect(find.text('Pendientes sincronizados'), findsOneWidget);
+  });
+
+  testWidgets('si la sincronización falla se informa al usuario', (
+    tester,
+  ) async {
+    final repository = CountingRepository(simulateSyncFailure: true);
+    await tester.pumpWidget(_appWithRepository(repository));
+
+    await tester.tap(find.byTooltip('Sincronizar pendientes'));
+    await tester.pump();
+
+    expect(find.textContaining('No se pudo sincronizar'), findsOneWidget);
   });
 }
