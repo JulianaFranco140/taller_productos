@@ -6,8 +6,8 @@ App Flutter que consulta un catálogo de productos y permite guardar una **prior
 
 | Integrante | Responsabilidad |
 |---|---|
-| _Nombre completo_ | Integrante 1: catálogo, detalle, validación y botón Sincronizar pendientes |
-| _Nombre completo_ | Integrante 2: Drift, Repository offline-first y Firestore |
+| _Juliana Franco Alzate_ | Integrante 1: catálogo, detalle, validación y botón Sincronizar pendientes |
+| _Samuel David Gallego Meneses_ | Integrante 2: Drift, Repository offline-first y Firestore |
 
 ## Cómo ejecutarlo
 
@@ -54,14 +54,4 @@ Para conectar Drift y Firestore:
 2. `getNote` debe devolver el `ProductNote` con el `pendingSync` que esté guardado en Drift. El detalle lo usa para mostrar el estado.
 3. En `main.dart`, inicializar Firebase y reemplazar `InMemoryProductRepository()` por la implementación real. No hay que cambiar ninguna pantalla.
 
-## Preguntas
 
-> El enunciado pide responderlas **con sus propias palabras**. Las completa la pareja.
-
-1. **¿Para qué sirve pendingSync?**
-
-2. **¿Por qué se guarda primero en Drift?**
-
-3. **¿Qué función cumple el Repository?**
-
-4. **¿Qué ocurre si Firebase falla?**
