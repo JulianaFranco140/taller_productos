@@ -1,30 +1,80 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:taller_productos/repository/in_memory_product_repository.dart';
+import 'package:taller_productos/screens/product_screen.dart';
+import 'package:taller_productos/services/product_service.dart';
 
-import 'package:taller_productos/main.dart';
+Widget appWith(MockClient client) => MaterialApp(
+  home: ProductScreen(
+    repository: InMemoryProductRepository(delay: Duration.zero),
+    service: ProductService(client: client),
+  ),
+);
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('muestra carga y luego los productos', (tester) async {
+    final client = MockClient(
+      (_) async => http.Response(
+        jsonEncode({
+          'products': [
+            {
+              'id': 1,
+              'title': 'Teclado Nova',
+              'category': 'accesorios',
+              'price': 25,
+              'thumbnail': 'https://example.com/t.png',
+            },
+          ],
+        }),
+        200,
+      ),
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    await tester.pumpWidget(appWith(client));
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.pump();
+    expect(find.text('Teclado Nova'), findsOneWidget);
+  });
+
+  testWidgets('muestra el estado vacío', (tester) async {
+    final client = MockClient(
+      (_) async => http.Response(jsonEncode({'products': []}), 200),
+    );
+
+    await tester.pumpWidget(appWith(client));
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Todavía no hay productos disponibles'), findsOneWidget);
+  });
+
+  testWidgets('error muestra el mensaje y Reintentar vuelve a pedir', (
+    tester,
+  ) async {
+    var calls = 0;
+    // La demora imita la red: la respuesta llega después del siguiente frame.
+    final client = MockClient((_) async {
+      calls++;
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      return http.Response('', 500);
+    });
+
+    await tester.pumpWidget(appWith(client));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('Error en el servidor (500)'), findsOneWidget);
+    expect(calls, 1);
+
+    await tester.tap(find.text('Reintentar'));
+    await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(calls, 2);
+    expect(find.text('Reintentar'), findsOneWidget);
   });
 }
