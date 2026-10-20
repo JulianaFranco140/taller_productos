@@ -16,22 +16,28 @@ class InMemoryProductRepository implements ProductRepository {
     this.delay = const Duration(milliseconds: 300),
   });
 
+  // Imita la demora de una base de datos real. Con Duration.zero (pruebas)
+  // no se crea ningún timer.
+  Future<void> _wait() async {
+    if (delay > Duration.zero) await Future<void>.delayed(delay);
+  }
+
   @override
   Future<ProductNote?> getNote(int productId) async {
-    await Future<void>.delayed(delay);
+    await _wait();
     return _notes[productId];
   }
 
   @override
   Future<void> saveNote(ProductNote note) async {
-    await Future<void>.delayed(delay);
+    await _wait();
     // Usar el productId como clave reemplaza el registro anterior: no se duplica.
     _notes[note.productId] = note.copyWith(pendingSync: true);
   }
 
   @override
   Future<void> syncPending() async {
-    await Future<void>.delayed(delay);
+    await _wait();
     if (simulateSyncFailure) {
       throw Exception('Fallo remoto simulado');
     }
