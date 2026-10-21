@@ -13,4 +13,7 @@ abstract class ProductRepository {
 
   // Intenta enviar únicamente las notas con pendingSync == true.
   Future<void> syncPending();
+
+  // Texto del último fallo de Firebase. Null si el último envío salió bien.
+  String? get lastRemoteError;
 }

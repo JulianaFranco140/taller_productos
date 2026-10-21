@@ -1,13 +1,23 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
-import 'repository/in_memory_product_repository.dart';
+import 'database/database_connection.dart';
+import 'firebase_options.dart';
+import 'repository/cloud_firestore.dart';
+import 'repository/offline_first_product_repository.dart';
 import 'repository/product_repository.dart';
 import 'screens/product_screen.dart';
 
-void main() {
-  // Mientras el Integrante 2 termina Drift + Firestore se usa el repository
-  // en memoria. Solo hay que cambiar esta línea por la implementación real.
-  final ProductRepository repository = InMemoryProductRepository();
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  final ProductRepository repository = OfflineFirstProductRepository(
+    database: openAppDatabase(),
+    remote: FirestoreNoteStore(),
+  );
 
   runApp(MyApp(repository: repository));
 }

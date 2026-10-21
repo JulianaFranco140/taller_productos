@@ -43,8 +43,8 @@ class _ProductScreenState extends State<ProductScreen> {
     try {
       await widget.repository.syncPending();
       _showMessage('Pendientes sincronizados');
-    } catch (_) {
-      _showMessage('No se pudo sincronizar. Los cambios siguen pendientes');
+    } catch (error) {
+      _showMessage('No se pudo sincronizar. Los cambios siguen pendientes. $error');
     } finally {
       if (mounted) setState(() => _syncing = false);
     }
@@ -54,7 +54,12 @@ class _ProductScreenState extends State<ProductScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: const Duration(seconds: 12),
+        ),
+      );
   }
 
   void openProductDetail(Product product) {
@@ -76,19 +81,6 @@ class _ProductScreenState extends State<ProductScreen> {
       appBar: AppBar(
         title: const Text('Productos'),
         centerTitle: true,
-        actions: [
-          IconButton(
-            tooltip: 'Sincronizar pendientes',
-            onPressed: _syncing ? null : syncPending,
-            icon: _syncing
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.sync),
-          ),
-        ],
       ),
       body: SafeArea(
         child: Center(
@@ -130,17 +122,34 @@ class _ProductScreenState extends State<ProductScreen> {
           padding: const EdgeInsets.all(16),
           itemCount: products.length + 1,
           itemBuilder: (context, index) {
-            if (index == 0) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Text(
-                  '${products.length} productos · toca uno para ver su detalle',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              );
-            }
+if (index == 0) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Tenemos ${products.length} productos en nuestra tienda. Toca uno para ver su detalle',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 12),
+        FilledButton.icon(
+          onPressed: _syncing ? null : syncPending,
+          icon: _syncing
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.sync_alt_outlined),
+          label: Text(_syncing ? 'Sincronizando...' : 'Sincronizar pendientes'),
+        ),
+      ],
+    ),
+  );
+}
             final product = products[index - 1];
             return ProductCard(
               product: product,

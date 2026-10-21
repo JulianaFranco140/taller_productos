@@ -80,7 +80,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       final saved = await widget.repository.getNote(widget.product.id);
       if (!mounted) return;
       setState(() => _savedNote = saved);
-      _showMessage('Información guardada');
+      final remoteError = widget.repository.lastRemoteError;
+      if (saved?.pendingSync == true && remoteError != null) {
+        _showMessage('Guardado en el teléfono. Firebase falló: $remoteError');
+      } else {
+        _showMessage('Información guardada');
+      }
     } catch (_) {
       _showMessage('No se pudo guardar la información');
     } finally {
@@ -91,7 +96,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: const Duration(seconds: 12),
+        ),
+      );
   }
 
   @override

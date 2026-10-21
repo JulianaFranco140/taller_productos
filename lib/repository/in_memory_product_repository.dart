@@ -9,6 +9,9 @@ class InMemoryProductRepository implements ProductRepository {
   // Permite simular que Firebase falla al sincronizar.
   bool simulateSyncFailure;
 
+  @override
+  String? lastRemoteError;
+
   final Duration delay;
 
   InMemoryProductRepository({
